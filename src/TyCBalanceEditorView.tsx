@@ -326,9 +326,6 @@ export const TyCBalanceEditorView: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-900">
           Gestión de Saldos y Ajustes Manuales
         </h2>
-        <p className="text-xs text-gray-500 mt-0.5 max-w-2xl">
-          Panel administrativo exclusivo de Centro de Servicios.
-        </p>
 
         {/* ========================================================
             BARRA DE SUB-PESTAÑAS (TABS)

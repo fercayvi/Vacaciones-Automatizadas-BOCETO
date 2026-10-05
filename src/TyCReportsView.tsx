@@ -240,8 +240,23 @@ export const TyCReportsView: React.FC = () => {
     return ['Todos', ...list];
   }, []);
 
-  // Lógica de filtrado de datos
+  // Evaluación de Filtros Activos (Estrategia Filter-First)
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() !== '' ||
+    selectedDepto !== 'Todos' ||
+    selectedTipo !== 'Todos' ||
+    selectedEstatus !== 'Todos' ||
+    selectedExcepcion !== 'Todos' ||
+    fechaDesde !== '' ||
+    fechaHasta !== ''
+  );
+
+  // Lógica de filtrado de datos (Filter-First: no procesa registros si no hay filtros activos)
   const filteredData = useMemo(() => {
+    if (!hasActiveFilters) {
+      return [];
+    }
+
     return MOCK_ALL_REQUESTS.filter((item) => {
       // 1. Búsqueda por Nombre o Nómina
       const term = searchTerm.toLowerCase().trim();
@@ -281,10 +296,19 @@ export const TyCReportsView: React.FC = () => {
 
       return matchSearch && matchDepto && matchTipo && matchEstatus && matchExcepcion && matchFecha;
     });
-  }, [searchTerm, selectedDepto, selectedTipo, selectedEstatus, selectedExcepcion, fechaDesde, fechaHasta]);
+  }, [hasActiveFilters, searchTerm, selectedDepto, selectedTipo, selectedEstatus, selectedExcepcion, fechaDesde, fechaHasta]);
 
-  // Recálculo dinámico de KPIs según los filtros activos
+  // Recálculo dinámico de KPIs según los filtros activos (muestra 0 si no hay filtros activos)
   const kpis = useMemo(() => {
+    if (!hasActiveFilters) {
+      return {
+        totalSolicitudes: 0,
+        totalDias: 0,
+        pendientes: 0,
+        excepciones: 0,
+      };
+    }
+
     const totalSolicitudes = filteredData.length;
     const totalDias = filteredData.reduce((acc, curr) => acc + curr.dias, 0);
     const pendientes = filteredData.filter((i) => i.estatus === 'Pendiente').length;
@@ -296,7 +320,7 @@ export const TyCReportsView: React.FC = () => {
       pendientes,
       excepciones,
     };
-  }, [filteredData]);
+  }, [hasActiveFilters, filteredData]);
 
   // Limpiar todos los filtros
   const handleResetFilters = () => {
@@ -308,15 +332,6 @@ export const TyCReportsView: React.FC = () => {
     setFechaDesde('');
     setFechaHasta('');
   };
-
-  const hasActiveFilters =
-    Boolean(searchTerm) ||
-    selectedDepto !== 'Todos' ||
-    selectedTipo !== 'Todos' ||
-    selectedEstatus !== 'Todos' ||
-    selectedExcepcion !== 'Todos' ||
-    Boolean(fechaDesde) ||
-    Boolean(fechaHasta);
 
   // Exportar a CSV nativo
   const handleExportCSV = () => {
@@ -424,10 +439,10 @@ export const TyCReportsView: React.FC = () => {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-gray-900 tabular-nums">
-              {kpis.totalSolicitudes}
+              {hasActiveFilters ? kpis.totalSolicitudes : '-'}
             </div>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              Registros bajo los filtros vigentes
+              {hasActiveFilters ? 'Registros bajo los filtros vigentes' : 'A la espera de consulta'}
             </p>
           </div>
         </div>
@@ -441,11 +456,17 @@ export const TyCReportsView: React.FC = () => {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-indigo-950 tabular-nums">
-              {kpis.totalDias}{' '}
-              <span className="text-xs font-normal text-indigo-700">días hábiles</span>
+              {hasActiveFilters ? (
+                <>
+                  {kpis.totalDias}{' '}
+                  <span className="text-xs font-normal text-indigo-700">días hábiles</span>
+                </>
+              ) : (
+                '-'
+              )}
             </div>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              Impacto acumulado en plantilla
+              {hasActiveFilters ? 'Impacto acumulado en plantilla' : 'A la espera de consulta'}
             </p>
           </div>
         </div>
@@ -459,10 +480,14 @@ export const TyCReportsView: React.FC = () => {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-amber-900 tabular-nums">
-              {kpis.pendientes}
+              {hasActiveFilters ? kpis.pendientes : '-'}
             </div>
             <p className="text-[11px] text-amber-700 font-medium mt-0.5">
-              {kpis.pendientes === 0 ? 'Sin rezago de jefaturas' : 'Pendientes de aprobación'}
+              {hasActiveFilters
+                ? kpis.pendientes === 0
+                  ? 'Sin rezago de jefaturas'
+                  : 'Pendientes de aprobación'
+                : 'A la espera de consulta'}
             </p>
           </div>
         </div>
@@ -476,11 +501,17 @@ export const TyCReportsView: React.FC = () => {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-red-700 tabular-nums flex items-baseline gap-1.5">
-              <span>{kpis.excepciones}</span>
-              <span className="text-xs font-medium text-red-600">autorizaciones críticas</span>
+              {hasActiveFilters ? (
+                <>
+                  <span>{kpis.excepciones}</span>
+                  <span className="text-xs font-medium text-red-600">autorizaciones críticas</span>
+                </>
+              ) : (
+                <span>-</span>
+              )}
             </div>
             <p className="text-[11px] text-red-700 mt-0.5 font-medium">
-              Omitieron anticipación o saldo regular
+              {hasActiveFilters ? 'Omitieron anticipación o saldo regular' : 'A la espera de consulta'}
             </p>
           </div>
         </div>
@@ -635,7 +666,9 @@ export const TyCReportsView: React.FC = () => {
               Registros de Permisos Auditables
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Mostrando {filteredData.length} de {MOCK_ALL_REQUESTS.length} solicitudes institucionales registradas.
+              {hasActiveFilters
+                ? `Mostrando ${filteredData.length} de ${MOCK_ALL_REQUESTS.length} solicitudes institucionales registradas.`
+                : 'Aplica filtros o busca por colaborador para consultar registros.'}
             </p>
           </div>
 
@@ -644,10 +677,57 @@ export const TyCReportsView: React.FC = () => {
           </div>
         </div>
 
-        {filteredData.length === 0 ? (
-          <div className="p-12 text-center">
+        {!hasActiveFilters ? (
+          /* Estado Vacío Filter-First: A la espera de filtros */
+          <div className="p-16 text-center bg-gray-50/40 animate-fadeIn">
+            <div className="w-20 h-20 rounded-2xl bg-white border border-gray-200 text-gray-300 mx-auto flex items-center justify-center mb-4 shadow-2xs">
+              <Filter className="text-gray-300 w-12 h-12" />
+            </div>
+            <h4 className="text-base font-bold text-gray-900 max-w-md mx-auto">
+              Selecciona un filtro o ingresa un parámetro de búsqueda para visualizar los registros de auditoría.
+            </h4>
+            <p className="text-xs text-gray-500 mt-1.5 max-w-md mx-auto leading-relaxed">
+              Por optimización de rendimiento, la tabla opera bajo la modalidad de consulta previa. Selecciona un departamento, estatus o escribe en el buscador superior para comenzar.
+            </p>
+
+            {/* Accesos rápidos sugeridos */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 pt-5 border-t border-gray-100 max-w-lg mx-auto">
+              <span className="text-[11px] text-gray-400 font-medium">Consultas rápidas:</span>
+              <button
+                type="button"
+                onClick={() => setSelectedExcepcion('Solo Excepciones')}
+                className="text-[11px] font-medium bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              >
+                Solo Excepciones
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedEstatus('Pendiente')}
+                className="text-[11px] font-medium bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              >
+                Por Resolver (Pendientes)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDepto('Ingeniería y TI')}
+                className="text-[11px] font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              >
+                Ingeniería y TI
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchTerm('Alejandro')}
+                className="text-[11px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              >
+                Buscar &ldquo;Alejandro&rdquo;
+              </button>
+            </div>
+          </div>
+        ) : filteredData.length === 0 ? (
+          /* Sin coincidencias con filtros activos */
+          <div className="p-12 text-center animate-fadeIn">
             <div className="w-12 h-12 rounded-full bg-gray-100 text-gray-400 mx-auto flex items-center justify-center mb-3">
-              <CheckCircle2 className="w-6 h-6 text-gray-400" />
+              <Search className="w-6 h-6 text-gray-400" />
             </div>
             <h4 className="text-sm font-bold text-gray-900">
               No se encontraron permisos con los filtros seleccionados

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldAlert, AlertTriangle } from 'lucide-react';
 import MinimalAlertModal, { AlertModalState } from './MinimalAlertModal';
 
 export interface Solicitud {
@@ -137,7 +137,7 @@ export const NewRequestForm: React.FC<NewRequestFormProps> = ({
     let mensajeError = '';
     if (!esSuficiente) {
       if (diasComprometidos > 0) {
-        mensajeError = `Saldo insuficiente. Tienes ${diasComprometidos} días comprometidos en solicitudes pendientes de aprobación por tu jefatura. Tu saldo efectivo es de ${saldoEfectivo} días.`;
+        mensajeError = `Saldo insuficiente. Tienes ${diasComprometidos} días comprometidos en solicitudes pendientes de aprobación por tu Jefe Directo. Tu saldo efectivo es de ${saldoEfectivo} días.`;
       } else {
         mensajeError =
           tipo === 'Vacaciones'
@@ -480,7 +480,7 @@ export const NewRequestForm: React.FC<NewRequestFormProps> = ({
             Nueva Solicitud
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Completa el formulario para enviar a revisión de tu jefatura.
+            Completa el formulario para enviar a revisión de tu Jefe Directo.
           </p>
         </div>
 
@@ -643,7 +643,7 @@ export const NewRequestForm: React.FC<NewRequestFormProps> = ({
                   )}
                 </span>
                 <span className="text-[11px] text-gray-500 font-normal mt-0.5">
-                  Permite omitir anticipación (todos los tipos) o saldo insuficiente (exclusivo para Vacaciones).
+                  Habilita el envío de solicitudes fuera de las políticas estándar bajo la autorización de tu Jefe Directo.
                 </span>
               </label>
 
@@ -685,12 +685,27 @@ export const NewRequestForm: React.FC<NewRequestFormProps> = ({
                 </div>
               )}
 
-              <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  Las solicitudes por excepción requieren revisión detallada y aprobación manual obligatoria por parte de{' '}
-                  {jefeDirecto}.
-                </p>
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      El Modo Excepción es válido únicamente para:
+                    </h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>
+                          Solicitar <strong>Vacaciones</strong> sin saldo disponible (adelanto de días).
+                        </li>
+                        <li>
+                          Solicitar Vacaciones, Días Flex o Home week <strong>sin los 7 días de anticipación</strong> requeridos.
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -717,7 +732,7 @@ export const NewRequestForm: React.FC<NewRequestFormProps> = ({
                   required
                   value={justification}
                   onChange={(e) => setJustification(e.target.value)}
-                  placeholder="Describe el motivo extraordinario o de fuerza mayor para evaluación de tu Jefatura..."
+                  placeholder="Describe el motivo extraordinario o de fuerza mayor para evaluación de tu Jefe Directo..."
                   className="w-full text-xs rounded border border-amber-300 p-2.5 text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-amber-50/20"
                 />
                 {justification.trim().length > 0 && justification.trim().length < 10 && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Calendar,
   Clock,
@@ -10,6 +10,7 @@ import {
   RefreshCw,
   LogOut,
   ChevronRight,
+  ChevronDown,
   Info,
   Building2,
   FileText,
@@ -22,6 +23,31 @@ import NewRequestForm from './NewRequestForm';
 import TyCReportsView from './TyCReportsView';
 import AdminSettingsView from './AdminSettingsView';
 import MinimalAlertModal, { AlertModalState } from './MinimalAlertModal';
+
+export interface ManagerOption {
+  id: string;
+  nombre: string;
+  puesto: string;
+  departamento: string;
+}
+
+export const MOCK_MANAGERS: ManagerOption[] = [
+  { id: 'MGR-001', nombre: 'Emmanuel Muñoz', puesto: 'Gerente de Centro de Servicios', departamento: 'Centro de Servicios' },
+  { id: 'MGR-002', nombre: 'Sofía Rivera Gómez', puesto: 'Directora de Cadena de Suministro', departamento: 'Operaciones y Logística' },
+  { id: 'MGR-003', nombre: 'Patricia Treviño Morales', puesto: 'Directora de Talento y Cultura', departamento: 'Talento y Cultura' },
+  { id: 'MGR-004', nombre: 'Javier Gómez Treviño', puesto: 'Director de Finanzas Corporativas', departamento: 'Finanzas Corporativas' },
+  { id: 'MGR-005', nombre: 'Ing. Mateo Estrada Cárdenas', puesto: 'Gerente de Producción Avícola', departamento: 'Producción' },
+  { id: 'MGR-006', nombre: 'Gerardo Alarcón Castillo', puesto: 'Gerente de Planta Querétaro', departamento: 'Operaciones Planta' },
+  { id: 'MGR-007', nombre: 'Lic. Laura Benítez Soto', puesto: 'Subdirectora Comercial y Ventas', departamento: 'Comercial' },
+  { id: 'MGR-008', nombre: 'Carlos Mendoza Silva', puesto: 'Contralor Corporativo', departamento: 'Finanzas Corporativas' },
+  { id: 'MGR-009', nombre: 'Rodrigo Nava Esquivel', puesto: 'Gerente de Cuentas Clave', departamento: 'Comercial' },
+  { id: 'MGR-010', nombre: 'Alejandro Morales Cruz', puesto: 'Líder Técnico de Arquitectura TI', departamento: 'Ingeniería y TI' },
+  { id: 'MGR-011', nombre: 'Mayra Raquel Juarez Torres', puesto: 'Generalista TyC Senior', departamento: 'Talento y Cultura' },
+  { id: 'MGR-012', nombre: 'Erik Fabian Limas Arriaga', puesto: 'Coordinador de Servicios', departamento: 'Centro de Servicios' },
+  { id: 'MGR-013', nombre: 'Edith Betina Arias Gonzalez', puesto: 'Generalista TyC de Planta', departamento: 'Talento y Cultura' },
+  { id: 'MGR-014', nombre: 'Mary Bell Pascual Cervantes', puesto: 'Generalista TyC Regional', departamento: 'Talento y Cultura' },
+  { id: 'MGR-015', nombre: 'Jose Luis Fernández Rodríguez', puesto: 'Generalista TyC Operaciones', departamento: 'Talento y Cultura' },
+];
 
 interface Solicitud {
   id: string;
@@ -200,20 +226,59 @@ export default function App() {
   const [modalPoliticaFlex, setModalPoliticaFlex] = useState(false);
   const [isReportManagerOpen, setIsReportManagerOpen] = useState(false);
   const [reportedManagerName, setReportedManagerName] = useState('');
+  const [reportReason, setReportReason] = useState('');
+  const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
+  const managerComboboxRef = useRef<HTMLDivElement>(null);
   const [filtroEstatus, setFiltroEstatus] = useState<'todos' | 'pendientes' | 'aprobados'>('todos');
+
+  // Cierre de la lista desplegable al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        managerComboboxRef.current &&
+        !managerComboboxRef.current.contains(event.target as Node)
+      ) {
+        setIsManagerDropdownOpen(false);
+      }
+    }
+
+    if (isManagerDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isManagerDropdownOpen]);
+
+  // Filtrado de líderes para el combobox
+  const filteredManagers = useMemo(() => {
+    if (!reportedManagerName.trim()) return MOCK_MANAGERS;
+    const query = reportedManagerName.toLowerCase().trim();
+    return MOCK_MANAGERS.filter(
+      (m) =>
+        m.nombre.toLowerCase().includes(query) ||
+        m.puesto.toLowerCase().includes(query) ||
+        m.departamento.toLowerCase().includes(query)
+    );
+  }, [reportedManagerName]);
 
   // Reportar error de jefe directo
   const handleSendReportManager = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!reportedManagerName.trim()) return;
+    if (!reportedManagerName.trim() || !reportReason.trim()) return;
+
+    const managerNombre = reportedManagerName.trim();
+    const motivoTexto = reportReason.trim();
 
     setIsReportManagerOpen(false);
+    setIsManagerDropdownOpen(false);
     setReportedManagerName('');
+    setReportReason('');
 
     setAlertModal({
       isOpen: true,
-      title: 'Reporte Enviado',
-      message: 'Se ha notificado a TyC y a tu jefe actual para actualizar tu línea de reporte. Te avisaremos cuando se aplique el cambio.',
+      title: 'Reporte Enviado a Talento y Cultura',
+      message: `Se ha notificado a Talento y Cultura para actualizar tu línea de reporte hacia ${managerNombre}. Motivo registrado: "${motivoTexto}". Te notificaremos cuando se aplique la corrección.`,
       type: 'success',
     });
   };
@@ -330,7 +395,7 @@ export default function App() {
       setAlertModal({
         isOpen: true,
         title: 'Sincronización Exitosa',
-        message: 'Saldos y registros sincronizados exitosamente con Intelexion HR v24.9.',
+        message: 'Saldos y registros sincronizados exitosamente',
         type: 'success',
       });
     }, 800);
@@ -636,6 +701,8 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setReportedManagerName('');
+                      setReportReason('');
+                      setIsManagerDropdownOpen(false);
                       setIsReportManagerOpen(true);
                     }}
                     className="text-xs text-blue-600 hover:text-blue-800 hover:underline mt-2 cursor-pointer text-right w-full block"
@@ -1442,55 +1509,177 @@ export default function App() {
       {isReportManagerOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4 animate-fadeIn"
-          onClick={() => setIsReportManagerOpen(false)}
+          onClick={() => {
+            setIsReportManagerOpen(false);
+            setIsManagerDropdownOpen(false);
+          }}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-gray-100 relative"
+            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-100 relative animate-scaleUp"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between pb-3 border-b border-gray-100 mb-4">
-              <h4 className="text-lg font-bold text-gray-800">
-                Reportar error en Jefatura
-              </h4>
+              <div>
+                <h4 className="text-base font-bold text-gray-900">
+                  Reportar error en Jefatura
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Actualización de línea de reporte en Intelexion
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsReportManagerOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors cursor-pointer"
+                onClick={() => {
+                  setIsReportManagerOpen(false);
+                  setIsManagerDropdownOpen(false);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors cursor-pointer"
                 aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
-              Si tu jefe directo no está actualizado, tus solicitudes podrían retrasarse. Por favor, indícanos el nombre de tu líder actual para que TyC lo actualice.
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed bg-amber-50/70 border border-amber-200 text-amber-900 p-3 rounded-xl">
+              Si tu jefe directo asignado no corresponde, tus solicitudes de vacaciones no llegarán al aprobador correcto. Por favor indícanos tu líder actual para que <strong>Talento y Cultura</strong> aplique la corrección.
             </p>
 
-            <form onSubmit={handleSendReportManager}>
-              <div className="mb-5">
-                <input
-                  type="text"
+            <form onSubmit={handleSendReportManager} className="space-y-4">
+              {/* Selector Buscable (Combobox) */}
+              <div ref={managerComboboxRef} className="relative">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Nombre de tu líder actual <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={reportedManagerName}
+                    onChange={(e) => {
+                      setReportedManagerName(e.target.value);
+                      setIsManagerDropdownOpen(true);
+                    }}
+                    onClick={() => setIsManagerDropdownOpen(true)}
+                    placeholder="Escribe para buscar o seleccionar a tu líder..."
+                    className="w-full border border-gray-300 rounded-lg pl-3 pr-16 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {reportedManagerName && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportedManagerName('');
+                          setIsManagerDropdownOpen(false);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded cursor-pointer"
+                        title="Borrar selección"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsManagerDropdownOpen((prev) => !prev);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded cursor-pointer"
+                      title="Ver lista de líderes"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isManagerDropdownOpen ? 'rotate-180 text-blue-600' : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista Desplegable Flotante del Combobox */}
+                {isManagerDropdownOpen && (
+                  <div
+                    className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-2xl divide-y divide-gray-100"
+                  >
+                    {filteredManagers.length === 0 ? (
+                      <div className="p-3 text-center">
+                        <p className="text-xs text-gray-600 font-medium">
+                          No se encontró &ldquo;{reportedManagerName}&rdquo;
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Puedes conservar este nombre escrito si es un líder de reciente ingreso.
+                        </p>
+                      </div>
+                    ) : (
+                      filteredManagers.map((mgr) => {
+                        const isSelected =
+                          reportedManagerName.trim().toLowerCase() === mgr.nombre.toLowerCase();
+                        return (
+                          <button
+                            key={mgr.id}
+                            type="button"
+                            onClick={() => {
+                              setReportedManagerName(mgr.nombre);
+                              setIsManagerDropdownOpen(false);
+                            }}
+                            className={`w-full px-3.5 py-2.5 hover:bg-blue-50/80 cursor-pointer transition-colors text-left flex items-center justify-between gap-2 ${
+                              isSelected ? 'bg-blue-50/70 border-l-4 border-blue-600 font-bold' : ''
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p
+                                className={`text-xs truncate ${
+                                  isSelected ? 'text-blue-900 font-bold' : 'text-gray-900 font-semibold'
+                                }`}
+                              >
+                                {mgr.nombre}
+                              </p>
+                              <p className="text-[11px] text-gray-500 truncate">
+                                {mgr.puesto} · <span className="text-gray-400">{mgr.departamento}</span>
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-mono text-gray-400 shrink-0">
+                              {mgr.id}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Campo de Justificación (Textarea) */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Explicación o contexto del cambio <span className="text-red-500">*</span>
+                </label>
+                <textarea
                   required
-                  value={reportedManagerName}
-                  onChange={(e) => setReportedManagerName(e.target.value)}
-                  placeholder="Nombre de tu jefe correcto..."
-                  className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  autoFocus
+                  rows={3}
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="Ej. Mi jefe anterior se dio de baja, me cambiaron de área hace un mes..."
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none bg-white"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              {/* Botones de Acción */}
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setIsReportManagerOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                  onClick={() => {
+                    setIsReportManagerOpen(false);
+                    setIsManagerDropdownOpen(false);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={!reportedManagerName.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
+                  disabled={!reportedManagerName.trim() || !reportReason.trim()}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg shadow-xs transition-all cursor-pointer"
                 >
                   Enviar Reporte
                 </button>

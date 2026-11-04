@@ -23,6 +23,7 @@ import NewRequestForm from './NewRequestForm';
 import TyCReportsView from './TyCReportsView';
 import AdminSettingsView from './AdminSettingsView';
 import MinimalAlertModal, { AlertModalState } from './MinimalAlertModal';
+import ThemeToggle from './ThemeToggle';
 
 export interface ManagerOption {
   id: string;
@@ -406,7 +407,11 @@ export default function App() {
   // ==========================================
   if (vistaActual === 'login') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
+        {/* Selector de Tema en Login */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+          <ThemeToggle />
+        </div>
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           {/* Tarjeta de Login */}
           <div className="bg-white py-8 px-6 border border-gray-200 rounded-lg sm:px-10">
@@ -516,13 +521,13 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0b0f19] dark:text-gray-100 transition-colors duration-200">
       {/* Barra de Navegación Superior Corporativa (Top Bar Contract: 3 zonas) */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Perfil del Colaborador con No. de Nómina y Cerrar Sesión */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs border border-blue-200 shrink-0">
                 FC
               </div>
@@ -536,72 +541,77 @@ export default function App() {
               </div>
               <button
                 onClick={handleLogout}
-                className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded transition-colors cursor-pointer"
+                className="ml-1 sm:ml-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded transition-colors cursor-pointer"
                 title="Cerrar sesión actual"
               >
                 <LogOut className="w-3.5 h-3.5 text-gray-500" />
-                <span>Cerrar Sesión</span>
+                <span className="hidden sm:inline">Cerrar Sesión</span>
               </button>
             </div>
 
-            {/* Enlaces de navegación con pestañas Colaborador / Jefe Directo / Auditoría TyC */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-              <button
-                type="button"
-                onClick={() => setPestanaActiva('mis-solicitudes')}
-                className={`py-5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  pestanaActiva === 'mis-solicitudes'
-                    ? 'text-blue-600 border-b-2 border-blue-600 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
-                }`}
-              >
-                <span>Mis Solicitudes y Saldos</span>
-              </button>
+            {/* Enlaces de navegación con pestañas + Botón de Cambio de Tema */}
+            <div className="flex items-center gap-3 lg:gap-4">
+              <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-medium">
+                <button
+                  type="button"
+                  onClick={() => setPestanaActiva('mis-solicitudes')}
+                  className={`py-5 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    pestanaActiva === 'mis-solicitudes'
+                      ? 'text-blue-600 border-b-2 border-blue-600 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
+                  }`}
+                >
+                  <span>Mis Solicitudes y Saldos</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPestanaActiva('aprobaciones')}
-                className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
-                  pestanaActiva === 'aprobaciones'
-                    ? 'text-blue-600 border-b-2 border-blue-600 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
-                }`}
-              >
-                <span>Aprobaciones</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                  {conteoPendientesJefe}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPestanaActiva('aprobaciones')}
+                  className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
+                    pestanaActiva === 'aprobaciones'
+                      ? 'text-blue-600 border-b-2 border-blue-600 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
+                  }`}
+                >
+                  <span>Aprobaciones</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    {conteoPendientesJefe}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPestanaActiva('reportes-tyc')}
-                className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
-                  pestanaActiva === 'reportes-tyc'
-                    ? 'text-purple-700 border-b-2 border-purple-700 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
-                }`}
-              >
-                <span>Auditoría TyC</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPestanaActiva('reportes-tyc')}
+                  className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
+                    pestanaActiva === 'reportes-tyc'
+                      ? 'text-purple-700 border-b-2 border-purple-700 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
+                  }`}
+                >
+                  <span>Auditoría TyC</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setPestanaActiva('gestion-saldos')}
-                className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
-                  pestanaActiva === 'gestion-saldos'
-                    ? 'text-purple-700 border-b-2 border-purple-700 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
-                }`}
-              >
-                <span>Centro de Servicios</span>
-              </button>
-            </nav>
+                <button
+                  type="button"
+                  onClick={() => setPestanaActiva('gestion-saldos')}
+                  className={`py-5 transition-colors cursor-pointer flex items-center gap-2 ${
+                    pestanaActiva === 'gestion-saldos'
+                      ? 'text-purple-700 border-b-2 border-purple-700 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
+                  }`}
+                >
+                  <span>Centro de Servicios</span>
+                </button>
+              </nav>
+
+              {/* Botón de Cambio de Tema (Oscuro / Blanco) */}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 
         {/* Barra de Pestañas Móvil (Responsiva para teléfonos de jefes) */}
-        <div className="md:hidden border-t border-gray-200 px-4 py-2 flex items-center gap-2 bg-gray-50 overflow-x-auto">
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 px-4 py-2 flex items-center gap-2 bg-gray-50 dark:bg-gray-900 overflow-x-auto">
           <button
             type="button"
             onClick={() => setPestanaActiva('mis-solicitudes')}

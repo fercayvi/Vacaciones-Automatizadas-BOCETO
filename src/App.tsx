@@ -415,9 +415,12 @@ export default function App() {
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           {/* Tarjeta de Login */}
           <div className="bg-white py-8 px-6 border border-gray-200 rounded-lg sm:px-10">
-            <h2 className="text-xl font-bold tracking-tight text-gray-900 mb-6 text-center">
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 mb-1 text-center">
               Iniciar Sesión
             </h2>
+            <p className="text-sm text-gray-500 mb-6 text-center">
+              editado con claude
+            </p>
             <form className="space-y-5" onSubmit={handleLogin}>
               <div>
                 <label
